@@ -274,6 +274,65 @@ func match(in []byte, n *node, unique func(f *node) bool) []int {
 	return hits
 }
 
+// A Hit represents a match of a blice against the input
+type Hit struct {
+	End uint64 // Position at which the last byte of a match was found
+
+	Index int // Index belonging to the pattern found, in the original dictionary
+}
+
+// MatchWithPositions works like Match, except it returns hits, and allows
+// repeated matches
+func (m *Matcher) MatchWithPositions(in []byte, onlyUniqueMatches bool) []Hit {
+	m.counter++
+
+	return matchWithPositions(in, m.root, func(f *node) bool {
+		if !onlyUniqueMatches {
+			return true
+		}
+		if f.counter != m.counter {
+			f.counter = m.counter
+			return true
+		}
+		return false
+	})
+}
+
+// matchWithPositions works like match, except it returns hits
+func matchWithPositions(in []byte, n *node, unique func(f *node) bool) []Hit {
+	var hits []Hit
+
+	for pos, b := range in {
+		c := int(b)
+
+		if !n.root && n.child[c] == nil {
+			n = n.fails[c]
+		}
+
+		if n.child[c] != nil {
+			f := n.child[c]
+			n = f
+
+			if f.output {
+				if unique(f) {
+					hits = append(hits, Hit{End: uint64(pos), Index: f.index})
+				}
+			}
+
+			for !f.suffix.root {
+				f = f.suffix
+				if unique(f) {
+					hits = append(hits, Hit{End: uint64(pos), Index: f.index})
+				} else {
+					break
+				}
+			}
+		}
+	}
+
+	return hits
+}
+
 // MatchThreadSafe provides the same result as Match() but does it in a
 // thread-safe manner. Uses a sync.Pool of haystacks to track the uniqueness of
 // the result items.

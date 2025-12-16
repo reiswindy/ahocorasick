@@ -5,6 +5,7 @@
 package ahocorasick
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"sync"
@@ -250,6 +251,67 @@ func TestMatch(t *testing.T) {
 
 	hits = m.Match([]byte("Mazilla/5.0 (Moc; Intel Computer OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Sofari/537.36"))
 	assert(t, len(hits) == 0)
+}
+
+func TestMatchWithPositions(t *testing.T) {
+	m := NewStringMatcher(dictionary)
+	hits := m.MatchWithPositions([]byte("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"), true)
+	fmt.Println(hits)
+	assert(t, len(hits) == 4)
+	assert(t, hits[0].End == 6)
+	assert(t, hits[0].Index == 0)
+	assert(t, hits[1].End == 15)
+	assert(t, hits[1].Index == 1)
+	assert(t, hits[2].End == 21)
+	assert(t, hits[2].Index == 2)
+	assert(t, hits[3].End == 112)
+	assert(t, hits[3].Index == 3)
+
+	hits = m.MatchWithPositions([]byte("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"), false)
+	fmt.Println(hits)
+	assert(t, len(hits) == 5)
+	assert(t, hits[0].End == 6)
+	assert(t, hits[0].Index == 0)
+	assert(t, hits[1].End == 15)
+	assert(t, hits[1].Index == 1)
+	assert(t, hits[2].End == 21)
+	assert(t, hits[2].Index == 2)
+	assert(t, hits[3].End == 32)
+	assert(t, hits[3].Index == 1)
+	assert(t, hits[4].End == 112)
+	assert(t, hits[4].Index == 3)
+
+	hits = m.MatchWithPositions([]byte("Mozilla/5.0 (Mac; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"), true)
+	fmt.Println(hits)
+	assert(t, len(hits) == 3)
+	assert(t, hits[0].End == 6)
+	assert(t, hits[0].Index == 0)
+	assert(t, hits[1].End == 15)
+	assert(t, hits[1].Index == 1)
+	assert(t, hits[2].End == 106)
+	assert(t, hits[2].Index == 3)
+
+	hits = m.MatchWithPositions([]byte("Mozilla/5.0 (Moc; Intel Computer OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"), false)
+	fmt.Println(hits)
+	assert(t, len(hits) == 2)
+	assert(t, hits[0].End == 6)
+	assert(t, hits[0].Index == 0)
+	assert(t, hits[1].End == 111)
+	assert(t, hits[1].Index == 3)
+
+	hits = m.MatchWithPositions([]byte("Mozilla/5.0 (Moc; Intel Computer OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Sofari/537.36"), false)
+	fmt.Println(hits)
+	assert(t, len(hits) == 1)
+	assert(t, hits[0].End == 6)
+	assert(t, hits[0].Index == 0)
+
+	hits = m.MatchWithPositions([]byte("Mazilla/5.0 (Moc; Intel Computer OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Sofari/537.36"), false)
+	fmt.Println(hits)
+	assert(t, len(hits) == 0)
+
+	hits = m.MatchWithPositions([]byte("Mozilla Mozilla Mozilla"), false)
+	fmt.Println(hits)
+	assert(t, len(hits) == 3)
 }
 
 func TestMatchThreadSafe(t *testing.T) {
